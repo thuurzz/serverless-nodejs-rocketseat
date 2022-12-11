@@ -5,6 +5,7 @@ import { join } from "path";
 import { readFileSync } from "fs";
 import dayjs from "dayjs";
 import chromium from "chrome-aws-lambda";
+import { S3 } from "aws-sdk";
 
 interface IcreateCertificate {
   id: string;
@@ -31,18 +32,6 @@ const compileTemplate = async (data: Itemplate) => {
 export const handler: APIGatewayProxyHandler = async (event) => {
   const { id, name, grade } = JSON.parse(event.body) as IcreateCertificate;
 
-  await document
-    .put({
-      TableName: "users_certificates",
-      Item: {
-        id,
-        name,
-        grade,
-        created_at: new Date().getTime(),
-      },
-    })
-    .promise();
-
   const response = await document
     .query({
       TableName: "users_certificates",
@@ -52,6 +41,25 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       },
     })
     .promise();
+
+  const userAlreadyExists = response.Items[0];
+
+  userAlreadyExists
+    ? await document
+        .put({
+          TableName: "users_certificates",
+          Item: {
+            id,
+            name,
+            grade,
+            created_at: new Date().getTime(),
+          },
+        })
+        .promise()
+    : {
+        statusCode: 409,
+        message: "User already exists",
+      };
 
   const medalPath = join(process.cwd(), "src", "templates", "selo.png");
 
@@ -87,8 +95,21 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   await browser.close();
 
+  const s3 = new S3();
+
+  s3.putObject({
+    Bucket: "bucket-certificate-ignite-serverless-rocketseat",
+    Key: `${id}.pdf`,
+    ACL: "public-read",
+    Body: pdf,
+    ContentType: "application/pdf",
+  }).promise();
+
   return {
     statusCode: 201,
-    body: JSON.stringify(response.Items[0]),
+    body: JSON.stringify({
+      message: "Certificado emitido com sucesso!",
+      url: `https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${id}.pdf`,
+    }),
   };
 };
