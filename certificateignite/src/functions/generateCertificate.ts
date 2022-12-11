@@ -6,53 +6,50 @@ import { readFileSync } from "fs";
 import dayjs from "dayjs";
 import chromium from "chrome-aws-lambda";
 import { S3 } from "aws-sdk";
+import { v4 as uuidv4 } from "uuid";
 
-interface IcreateCertificate {
-  id: string;
+interface ICreateCertificate {
   name: string;
-  grade: string;
 }
 
-interface Itemplate {
-  id: string;
+interface ITemplate {
   name: string;
   date: string;
   medal: string;
-  grade: string;
+  id: string;
 }
 
-const compileTemplate = async (data: Itemplate) => {
+const compileTemplate = async (data: ITemplate) => {
   const filePath = join(process.cwd(), "src", "templates", "certificate.hbs");
-
   const html = readFileSync(filePath, "utf-8");
-
   return compile(html)(data);
 };
 
 export const handler: APIGatewayProxyHandler = async (event) => {
-  const { id, name, grade } = JSON.parse(event.body) as IcreateCertificate;
+  const { name } = JSON.parse(event.body) as ICreateCertificate;
+
+  const idUser = uuidv4();
 
   const response = await document
     .query({
       TableName: "users_certificates",
       KeyConditionExpression: "id = :id",
       ExpressionAttributeValues: {
-        ":id": id,
+        ":id": idUser,
       },
     })
     .promise();
 
   const userAlreadyExists = response.Items[0];
 
-  userAlreadyExists
+  !userAlreadyExists
     ? await document
         .put({
           TableName: "users_certificates",
           Item: {
-            id,
+            id: idUser,
             name,
-            grade,
-            created_at: new Date().getTime(),
+            created_at: dayjs().format("DD/MM/YYYY HH:mm"),
           },
         })
         .promise()
@@ -62,13 +59,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
 
   const medalPath = join(process.cwd(), "src", "templates", "selo.png");
-
   const medal = readFileSync(medalPath, "base64");
 
-  const data: Itemplate = {
+  const data: ITemplate = {
     date: dayjs().format("DD/MM/YYYY"),
-    grade,
-    id,
+    id: idUser,
     name,
     medal: medal,
   };
@@ -99,7 +94,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   s3.putObject({
     Bucket: "bucket-certificate-ignite-serverless-rocketseat",
-    Key: `${id}.pdf`,
+    Key: `${idUser}.pdf`,
     ACL: "public-read",
     Body: pdf,
     ContentType: "application/pdf",
@@ -109,7 +104,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     statusCode: 201,
     body: JSON.stringify({
       message: "Certificado emitido com sucesso!",
-      url: `https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${id}.pdf`,
+      url: `https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf`,
     }),
   };
 };
