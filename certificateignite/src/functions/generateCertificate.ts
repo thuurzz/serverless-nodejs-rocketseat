@@ -49,7 +49,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
           Item: {
             id: idUser,
             name,
-            created_at: dayjs().format("DD/MM/YYYY HH:mm"),
+            created_at: dayjs().format("DD/MM/YYYY"),
           },
         })
         .promise()
