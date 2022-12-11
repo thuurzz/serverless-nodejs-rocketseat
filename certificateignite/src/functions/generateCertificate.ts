@@ -3,7 +3,8 @@ import { compile } from "handlebars";
 import { document } from "../utils/dynamodbClient";
 import { join } from "path";
 import { readFileSync } from "fs";
-import * as dayjs from "dayjs";
+import dayjs from "dayjs";
+import chromium from "chrome-aws-lambda";
 
 interface IcreateCertificate {
   id: string;
@@ -20,7 +21,7 @@ interface Itemplate {
 }
 
 const compileTemplate = async (data: Itemplate) => {
-  const filePath = join(process.cwd(), "src", "templates", "certificates.hbs");
+  const filePath = join(process.cwd(), "src", "templates", "certificate.hbs");
 
   const html = readFileSync(filePath, "utf-8");
 
@@ -52,7 +53,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     })
     .promise();
 
-  const medalPath = join(process.cwd(), "src", "templates", "medal.png");
+  const medalPath = join(process.cwd(), "src", "templates", "selo.png");
 
   const medal = readFileSync(medalPath, "base64");
 
@@ -64,7 +65,27 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     medal: medal,
   };
 
-  const content = compileTemplate(data);
+  const content = await compileTemplate(data);
+
+  const browser = await chromium.puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath,
+  });
+
+  const page = await browser.newPage();
+
+  await page.setContent(content);
+
+  const pdf = await page.pdf({
+    format: "a4",
+    landscape: true,
+    printBackground: true,
+    preferCSSPageSize: true,
+    path: process.env.IS_OFFLINE ? "./certificate.pdf" : null,
+  });
+
+  await browser.close();
 
   return {
     statusCode: 201,
