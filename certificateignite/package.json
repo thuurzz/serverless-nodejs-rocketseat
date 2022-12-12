@@ -20,7 +20,8 @@
     "dayjs": "^1.11.7",
     "esbuild": "^0.16.3",
     "handlebars": "^4.7.7",
-    "puppeteer-core": "^19.4.0",
+    "puppeteer": "10.1.0",
+    "puppeteer-core": "13.7.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

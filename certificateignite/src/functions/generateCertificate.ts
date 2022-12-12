@@ -92,13 +92,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   const s3 = new S3();
 
-  s3.putObject({
-    Bucket: "bucket-certificate-ignite-serverless-rocketseat",
-    Key: `${idUser}.pdf`,
-    ACL: "public-read",
-    Body: pdf,
-    ContentType: "application/pdf",
-  }).promise();
+  await s3
+    .putObject({
+      Bucket: "bucket-certificate-ignite-serverless-rocketseat",
+      Key: `${idUser}.pdf`,
+      ACL: "public-read",
+      Body: pdf,
+      ContentType: "application/pdf",
+    })
+    .promise();
 
   return {
     statusCode: 201,

@@ -32,7 +32,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         }),
       }
     : {
-        statusCode: 401,
+        statusCode: 400,
         body: JSON.stringify({
           message: "Certificado não é válido!",
         }),
