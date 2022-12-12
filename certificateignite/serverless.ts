@@ -32,6 +32,7 @@ const serverlessConfiguration: AWS = {
   package: { individually: false, include: ["./src/templates/**"] },
   functions: {
     generateCertificate: {
+      timeout: 15,
       handler: "src/functions/generateCertificate.handler",
       events: [
         {
