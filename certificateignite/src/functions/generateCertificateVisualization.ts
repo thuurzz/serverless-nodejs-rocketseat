@@ -7,7 +7,8 @@ import dayjs from "dayjs";
 import chromium from "chrome-aws-lambda";
 import { S3 } from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
-import { createTransport } from "nodemailer";
+import AWS from "aws-sdk";
+const SES = new AWS.SES();
 
 interface ICreateCertificate {
   name: string;
@@ -21,6 +22,7 @@ interface ITemplate {
   id: string;
 }
 
+//==================== compila o template do hbs
 const compileTemplate = async (data: ITemplate) => {
   const filePath = join(
     process.cwd(),
@@ -32,26 +34,11 @@ const compileTemplate = async (data: ITemplate) => {
   return compile(html)(data);
 };
 
-// grab the variables from the process
-const { MAIL_HOST, MAIL_USER, MAIL_PASS } = process.env;
-
-// create the transport
-const transport = createTransport({
-  host: MAIL_HOST,
-  port: 2525,
-  auth: {
-    user: MAIL_USER,
-    pass: MAIL_PASS,
-  },
-});
-
 export const handler: APIGatewayProxyHandler = async (event) => {
+  //================= pega dados do request
   const { name, email } = JSON.parse(event.body) as ICreateCertificate;
 
-  console.log({ name, email });
-
-  console.log({ MAIL_HOST, MAIL_USER, MAIL_PASS });
-
+  //================= cria id e verifica se já existe
   const idUser = uuidv4();
 
   const response = await document
@@ -66,6 +53,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   const userAlreadyExists = response.Items[0];
 
+  //================== se não existir, salva metadados no dynamoDB
   !userAlreadyExists
     ? await document
         .put({
@@ -73,6 +61,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
           Item: {
             id: idUser,
             name,
+            email: email,
             created_at: dayjs().format("DD/MM/YYYY"),
           },
         })
@@ -82,6 +71,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         message: "User already exists",
       };
 
+  //================== faz o replace com as info no template
   const medalPath = join(process.cwd(), "src", "templates", "selo.png");
   const medal = readFileSync(medalPath, "base64");
 
@@ -114,6 +104,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   await browser.close();
 
+  //==================== salva o pdf do certificado no s3
   const s3 = new S3();
 
   await s3
@@ -126,17 +117,38 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     })
     .promise();
 
-  //===================== Enviar email
-  console.log("****** ENVIANDO EMAIL ********");
-  const info = await transport.sendMail({
-    from: '"Arthur Vinicius" <thuur.vss@gmail.com>',
-    to: email,
-    subject: "Certificado de visualização de Post",
-    text: `Olá, como vai? ${name}. Aqui está o certificado, como combinado! Obrigado por visualizar minha publicação.`,
-    html: pdf,
-  });
+  //===================== envia e-mail com link do certificado
+  const params = {
+    Destination: {
+      ToAddresses: [email],
+    },
+    Message: {
+      Body: {
+        Text: {
+          Charset: "UTF-8",
+          Data: `Obrigado por visualizar meu post, aqui está o link para o seu certificado: https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf \nAtenciosamente, Arthur.`,
+        },
+      },
+      Subject: {
+        Data: "Certificado de visualização de postagem sobre lambda",
+      },
+    },
+    Source: "thuur.vss@gmail.com",
+  };
 
-  console.log(info);
+  try {
+    await SES.sendEmail(params).promise();
+    console.log({
+      statusCode: 200,
+      body: "Email enviado!",
+    });
+  } catch (e) {
+    console.error(e);
+    console.log({
+      statusCode: 400,
+      body: "Falha no envio do email.",
+    });
+  }
 
   return {
     statusCode: 201,

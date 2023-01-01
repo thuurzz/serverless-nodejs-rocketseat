@@ -16,20 +16,20 @@ const serverlessConfiguration: AWS = {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true,
     },
-    stage: "dev",
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
       NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
-      MAIL_HOST: "${file(env.yml):${self:provider.stage}.MAIL_HOST}",
-      MAIL_PORT: "${file(env.yml):${self:provider.stage}.MAIL_PORT}",
-      MAIL_USER: "${file(env.yml):${self:provider.stage}.MAIL_USER}",
-      MAIL_PASS: "${file(env.yml):${self:provider.stage}.MAIL_PASS}",
     },
     iam: {
       role: {
         statements: [
           { Effect: "Allow", Action: ["dynamodb:*"], Resource: ["*"] },
           { Effect: "Allow", Action: ["s3:*"], Resource: ["*"] },
+          {
+            Effect: "Allow",
+            Action: ["ses:SendEmail", "ses:SendRawEmail"],
+            Resource: "*",
+          },
         ],
       },
     },
