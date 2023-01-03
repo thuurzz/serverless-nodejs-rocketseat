@@ -5,10 +5,9 @@ import { join } from "path";
 import { readFileSync } from "fs";
 import dayjs from "dayjs";
 import chromium from "chrome-aws-lambda";
-import { S3 } from "aws-sdk";
 import { v4 as uuidv4 } from "uuid";
-import AWS from "aws-sdk";
-const SES = new AWS.SES();
+import { ses } from "../utils/sesClient";
+import { s3 } from "../utils/s3Client";
 
 interface ICreateCertificate {
   name: string;
@@ -105,8 +104,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   await browser.close();
 
   //==================== salva o pdf do certificado no s3
-  const s3 = new S3();
-
   await s3
     .putObject({
       Bucket: "bucket-certificate-ignite-serverless-rocketseat",
@@ -126,7 +123,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       Body: {
         Text: {
           Charset: "UTF-8",
-          Data: `Obrigado por visualizar meu post, aqui está o link para o seu certificado: https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf \nAtenciosamente, Arthur.`,
+          Data: `Obrigado por visualizar meu post ${name}. 
+          \nAqui está o link para o seu certificado: https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf 
+          \nAtenciosamente, Arthur.`,
         },
       },
       Subject: {
@@ -135,26 +134,22 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     },
     Source: "thuur.vss@gmail.com",
   };
+  console.log(params);
 
   try {
-    await SES.sendEmail(params).promise();
-    console.log({
+    await ses.sendEmail(params).promise();
+    return {
       statusCode: 200,
-      body: "Email enviado!",
-    });
+      body: JSON.stringify({
+        message: "Sucesso no envio do email.",
+        url: `https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf`,
+      }),
+    };
   } catch (e) {
     console.error(e);
-    console.log({
+    return {
       statusCode: 400,
-      body: "Falha no envio do email.",
-    });
+      body: JSON.stringify({ message: "Falha no envio do email." }),
+    };
   }
-
-  return {
-    statusCode: 201,
-    body: JSON.stringify({
-      message: "Certificado emitido com sucesso!",
-      url: `https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf`,
-    }),
-  };
 };

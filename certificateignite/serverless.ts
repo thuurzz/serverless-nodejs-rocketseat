@@ -73,6 +73,18 @@ const serverlessConfiguration: AWS = {
         },
       ],
     },
+    sendEmailCertificate: {
+      handler: "src/functions/sendEmailCertificate.handler",
+      events: [
+        {
+          http: {
+            path: "sendEmailCertificate",
+            method: "post",
+            cors: true,
+          },
+        },
+      ],
+    },
   },
   custom: {
     esbuild: {
