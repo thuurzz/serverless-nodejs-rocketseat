@@ -16,6 +16,9 @@ const serverlessConfiguration: AWS = {
       minimumCompressionSize: 1024,
       shouldStartNameWithService: true,
     },
+    logs: {
+      restApi: true,
+    },
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
       NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
@@ -50,6 +53,7 @@ const serverlessConfiguration: AWS = {
       ],
     },
     generateCertificateVisualization: {
+      timeout: 15,
       handler: "src/functions/generateCertificateVisualization.handler",
       events: [
         {
@@ -81,6 +85,23 @@ const serverlessConfiguration: AWS = {
             path: "sendEmailCertificate",
             method: "post",
             cors: true,
+          },
+        },
+      ],
+    },
+    sendEmailTrigedByS3: {
+      handler: "src/functions/sendEmailTrigedByS3.handler",
+      events: [
+        {
+          s3: {
+            bucket: "bucket-certificate-ignite-serverless-rocketseat",
+            event: "s3:ObjectCreated:*",
+            rules: [
+              {
+                suffix: ".pdf",
+              },
+            ],
+            existing: true,
           },
         },
       ],

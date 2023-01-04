@@ -6,7 +6,6 @@ import { readFileSync } from "fs";
 import dayjs from "dayjs";
 import chromium from "chrome-aws-lambda";
 import { v4 as uuidv4 } from "uuid";
-import { ses } from "../utils/sesClient";
 import { s3 } from "../utils/s3Client";
 
 interface ICreateCertificate {
@@ -114,42 +113,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     })
     .promise();
 
-  //===================== envia e-mail com link do certificado
-  const params = {
-    Destination: {
-      ToAddresses: [email],
-    },
-    Message: {
-      Body: {
-        Text: {
-          Charset: "UTF-8",
-          Data: `Obrigado por visualizar meu post ${name}. 
-          \nAqui está o link para o seu certificado: https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf 
-          \nAtenciosamente, Arthur.`,
-        },
-      },
-      Subject: {
-        Data: "Certificado de visualização de postagem sobre lambda",
-      },
-    },
-    Source: "thuur.vss@gmail.com",
+  return {
+    statusCode: 201,
+    body: JSON.stringify({
+      message: "Sucesso na criação do certificado.",
+      url: `https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf`,
+    }),
   };
-  console.log(params);
-
-  try {
-    await ses.sendEmail(params).promise();
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: "Sucesso no envio do email.",
-        url: `https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf`,
-      }),
-    };
-  } catch (e) {
-    console.error(e);
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ message: "Falha no envio do email." }),
-    };
-  }
 };
