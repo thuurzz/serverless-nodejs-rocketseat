@@ -57,12 +57,12 @@ exports.handler = async (event, _context) => {
           Data: `Olá! Obrigado por visualizar meu post. 
           \n O nome cadastrado por você, foi: ${user.name}. 
           \n Aqui está o link para o seu certificado, ele tem duração de 15 minutos: ${urlPDF}
-          \n Obrigado e Até mais! Arthur.
+          \n Obrigado e até mais! Arthur.
           `,
         },
       },
       Subject: {
-        Data: "Certificado visualização postagem AWS Lambda",
+        Data: "Certificado visualização postagem",
       },
     },
     Source: "thuur.vss@gmail.com",
