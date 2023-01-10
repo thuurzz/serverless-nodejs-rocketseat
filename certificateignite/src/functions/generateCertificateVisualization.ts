@@ -41,7 +41,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   const response = await document
     .query({
-      TableName: "users_certificates",
+      TableName: process.env.TABLE_NAME,
       KeyConditionExpression: "id = :id",
       ExpressionAttributeValues: {
         ":id": idUser,
@@ -55,7 +55,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   !userAlreadyExists
     ? await document
         .put({
-          TableName: "users_certificates",
+          TableName: process.env.TABLE_NAME,
           Item: {
             id: idUser,
             name,
@@ -105,7 +105,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   //==================== salva o pdf do certificado no s3
   await s3
     .putObject({
-      Bucket: "bucket-certificate-ignite-serverless-rocketseat",
+      Bucket: process.env.NOME_BUCKET,
       Key: `${idUser}.pdf`,
       ACL: "public-read",
       Body: pdf,
@@ -117,7 +117,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     statusCode: 201,
     body: JSON.stringify({
       message: "Sucesso na criação do certificado.",
-      url: `https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf`,
+      url: `https://${process.env.NOME_BUCKET}.s3.amazonaws.com/${idUser}.pdf`,
     }),
   };
 };

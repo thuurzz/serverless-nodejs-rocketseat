@@ -12,7 +12,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   const response = await document
     .query({
-      TableName: "users_certificates",
+      TableName: process.env.TABLE_NAME,
       KeyConditionExpression: "id = :id",
       ExpressionAttributeValues: {
         ":id": id,

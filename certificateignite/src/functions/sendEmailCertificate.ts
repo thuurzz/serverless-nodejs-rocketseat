@@ -19,7 +19,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         Text: {
           Charset: "UTF-8",
           Data: `Obrigado por visualizar meu post ${name}. 
-          \nAqui está o link para o seu certificado: https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf 
+          \nAqui está o link para o seu certificado: https://${process.env.NOME_BUCKET}.s3.amazonaws.com/${idUser}.pdf 
           \nAtenciosamente, Arthur.`,
         },
       },
@@ -27,7 +27,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         Data: "Certificado de visualização de postagem sobre lambda",
       },
     },
-    Source: "thuur.vss@gmail.com",
+    Source: process.env.EMAIL_REMETENTE,
   };
 
   try {

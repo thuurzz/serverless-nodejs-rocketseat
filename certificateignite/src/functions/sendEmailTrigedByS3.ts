@@ -48,7 +48,7 @@ exports.handler = async (event, _context) => {
   //=============== preenche as info para enviar e-mail
   const paramsSES = {
     Destination: {
-      ToAddresses: [user.email, "thuur.vss@gmail.com"],
+      ToAddresses: [user.email, process.env.EMAIL_REMETENTE],
     },
     Message: {
       Body: {
@@ -65,7 +65,7 @@ exports.handler = async (event, _context) => {
         Data: "Certificado visualização postagem",
       },
     },
-    Source: "thuur.vss@gmail.com",
+    Source: process.env.EMAIL_REMETENTE,
   };
 
   //============== realiza envio de e-mail, usando SES
@@ -75,7 +75,7 @@ exports.handler = async (event, _context) => {
       statusCode: 200,
       body: JSON.stringify({
         message: "Sucesso no envio do email.",
-        url: `https://bucket-certificate-ignite-serverless-rocketseat.s3.amazonaws.com/${idUser}.pdf`,
+        url: `https://${process.env.NOME_BUCKET}.s3.amazonaws.com/${idUser}.pdf`,
       }),
     };
   } catch (e) {
