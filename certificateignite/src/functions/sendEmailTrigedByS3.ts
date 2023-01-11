@@ -48,7 +48,8 @@ exports.handler = async (event, _context) => {
   //=============== preenche as info para enviar e-mail
   const paramsSES = {
     Destination: {
-      ToAddresses: [user.email, process.env.EMAIL_REMETENTE],
+      ToAddresses: [user.email],
+      BccAddresses: [process.env.EMAIL_REMETENTE],
     },
     Message: {
       Body: {
