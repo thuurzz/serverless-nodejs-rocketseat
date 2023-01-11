@@ -1,6 +1,7 @@
 import type { AWS } from "@serverless/typescript";
 
 const serverlessConfiguration: AWS = {
+  useDotenv: true,
   service: "certificateignite",
   frameworkVersion: "3",
   plugins: [
@@ -22,6 +23,9 @@ const serverlessConfiguration: AWS = {
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
       NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
+      TABLE_NAME: "${env:TABLE_NAME}",
+      EMAIL_REMETENTE: "${env:EMAIL_REMETENTE}",
+      NOME_BUCKET: "${env:NOME_BUCKET}",
     },
     iam: {
       role: {
@@ -133,7 +137,7 @@ const serverlessConfiguration: AWS = {
       dbCertificateUsers: {
         Type: "AWS::DynamoDB::Table",
         Properties: {
-          TableName: "users_certificates",
+          TableName: "${env:TABLE_NAME}",
           ProvisionedThroughput: {
             ReadCapacityUnits: 5,
             WriteCapacityUnits: 5,
